@@ -16,7 +16,7 @@ def webhook():
     user_message = req['queryResult']['queryText']
 
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
     model="gpt-3.5-turbo",
     messages=[
         {"role": "system", "content": """
@@ -128,7 +128,7 @@ Rispondi sempre basandoti solo su queste informazioni, e per altre domande indir
                 {"role": "user", "content": user_message}
             ]
         )
-        bot_response = response.choices[0].message['content']
+        bot_response = response.choices[0].message.content
         return jsonify({'fulfillmentText': bot_response})
 
     except Exception as e:
