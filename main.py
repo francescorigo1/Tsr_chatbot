@@ -4,6 +4,7 @@ import openai
 
 app = Flask(__name__)
 
+# Chiave API di OpenAI (deve essere settata su Render come variabile OPENAI_API_KEY)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route('/')
@@ -13,24 +14,24 @@ def home():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json(force=True)
-    print("Richiesta ricevuta:", req)  # debug: stampa la richiesta da Dialogflow
-
     user_message = req['queryResult']['queryText']
-    print("Messaggio utente:", user_message)  # debug: stampa messaggio utente
 
     try:
+        # ChatGPT con istruzioni personalizzate per l'azienda vinicola
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_message}]
+            messages=[
+                {"role": "system", "content": "Sei un assistente virtuale per l’azienda vinicola Terre di San Rocco. Rispondi solo su vini, degustazioni, metodi di produzione e visite in cantina."},
+                {"role": "user", "content": user_message}
+            ]
         )
         bot_response = completion.choices[0].message['content']
-        print("Risposta OpenAI:", bot_response)  # debug: stampa risposta generata
-
         return jsonify({'fulfillmentText': bot_response})
 
     except Exception as e:
+        # Stampa l'errore nei log e invia una risposta generica
         print(f"Errore OpenAI: {e}")
-        return jsonify({'fulfillmentText': 'Scusa, c\'è stato un errore nel processare la tua richiesta.'})
+        return jsonify({'fulfillmentText': f"Scusa, c'è stato un errore: {str(e)}"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
