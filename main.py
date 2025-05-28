@@ -13,7 +13,10 @@ def home():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json(force=True)
+    print("Richiesta ricevuta:", req)  # debug: stampa la richiesta da Dialogflow
+
     user_message = req['queryResult']['queryText']
+    print("Messaggio utente:", user_message)  # debug: stampa messaggio utente
 
     try:
         completion = openai.ChatCompletion.create(
@@ -21,6 +24,8 @@ def webhook():
             messages=[{"role": "user", "content": user_message}]
         )
         bot_response = completion.choices[0].message['content']
+        print("Risposta OpenAI:", bot_response)  # debug: stampa risposta generata
+
         return jsonify({'fulfillmentText': bot_response})
 
     except Exception as e:
