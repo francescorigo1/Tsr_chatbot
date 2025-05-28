@@ -1,5 +1,4 @@
 import os
-import requests
 from flask import Flask, request, jsonify
 from openai import OpenAI
 
@@ -8,27 +7,26 @@ app = Flask(__name__)
 # Inizializza client OpenAI con la chiave del progetto
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# Link RAW al file su GitHub
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/francescorigo1/Tsr_chatbot/main/terre_di_san_rocco_info.txt"
-
-# Funzione per scaricare il contenuto del file TXT da GitHub
-def get_prompt_from_github():
-    try:
-        response = requests.get(GITHUB_RAW_URL)
-        response.raise_for_status()
-        return response.text
-    except Exception as e:
-        print(f"Errore scaricando il file: {e}")
-        return None
-
-# Scarica il prompt una volta all’avvio (puoi ricaricarlo periodicamente se vuoi)
-system_prompt = get_prompt_from_github()
-if not system_prompt:
-    system_prompt = "Errore: non è stato possibile caricare le informazioni sui vini."
+# Carica il contenuto del prompt da file al momento dell’avvio
+with open("prompt.txt", "r", encoding="utf-8") as f:
+    system_prompt = f.read()
 
 @app.route('/')
 def home():
     return "Server è online!"
+
+@app.route('/testopenai')
+def test_openai():
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": "Say hello!"}
+            ]
+        )
+        return jsonify(response.choices[0].message.dict())
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
