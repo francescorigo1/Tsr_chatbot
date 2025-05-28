@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify
 import os
+from flask import Flask, request, jsonify
 import openai
 
 app = Flask(__name__)
 
+# Prende la chiave API da variabile d'ambiente
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route('/')
@@ -16,7 +17,7 @@ def webhook():
     user_message = req['queryResult']['queryText']
 
     try:
-        response = openai.chat.completions.create(
+        response = openai.ChatCompletion.create(
     model="gpt-3.5-turbo",
     messages=[
         {"role": "system", "content": """
