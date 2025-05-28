@@ -134,6 +134,11 @@ Rispondi sempre basandoti solo su queste informazioni, e per altre domande indir
     except Exception as e:
         print(f"Errore OpenAI: {e}")
         return jsonify({'fulfillmentText': f"Scusa, c'è stato un errore: {str(e)}"})
+@app.route('/version')
+def version():
+    return jsonify({
+        "openai_version": openai.__version__
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
