@@ -4,7 +4,7 @@ import openai
 
 app = Flask(__name__)
 
-# Prende la chiave API da variabile d'ambiente
+# Prendi la chiave API da variabile d'ambiente
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route('/')
@@ -17,10 +17,10 @@ def webhook():
     user_message = req['queryResult']['queryText']
 
     try:
-        response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": """
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": """
 Sei un assistente esperto dei vini dell'azienda vitivinicola Terre di San Rocco. Fornisci risposte dettagliate e precise basate esclusivamente sulle seguenti schede prodotto.
 
 1. Pinot Grigio  
@@ -135,6 +135,7 @@ Rispondi sempre basandoti solo su queste informazioni, e per altre domande indir
     except Exception as e:
         print(f"Errore OpenAI: {e}")
         return jsonify({'fulfillmentText': f"Scusa, c'è stato un errore: {str(e)}"})
+
 @app.route('/version')
 def version():
     return jsonify({
