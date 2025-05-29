@@ -408,7 +408,7 @@ Contatti e posizione:
 -Situata nella provincia di Treviso, a Roncade, via Vivaldi 32/E.  
 - info@terredisanrocco.it, telefono +39 3891260990  
 - https://terredisanrocco.it "
-        "Rispondi con professionalità e gentilezza alle domande sull’azienda, sui vini, sugli abbinamenti. "
+        "Rispondi con professionalità e gentilezza alle domande sull’azienda, sui vini, sugli abbinamenti. Non ripetere troppe volte il nome della cantina, utilizza da noi oppure nella nostra tenuta o affermazioni simili "
         "Adatta automaticamente la lingua della risposta a quella dell’utente (italiano o inglese)."
 """}] + chat_memory
 
