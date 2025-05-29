@@ -26,7 +26,7 @@ def webhook():
 
     # Prepara i messaggi con system prompt fisso + la memoria
     messages = [
-        {"role": "system", "content": "
+        {"role": "system", "content": """
         "Sei un assistente esperto dei vini dell'azienda vitivinicola Terre di San Rocco.Fornisci risposte dettagliate e precise basate esclusivamente sulle seguenti informazioni.
 
 I nostri vigneti si trovano a Roncade in provincia di Treviso, tra la laguna di Venezia e le colline del Montello. Una zona con temperature ideali e caratterizzata da interessanti escursioni termiche tra il giorno e la notte, condizioni che favoriscono la perfetta maturazione delle uve.
@@ -137,7 +137,7 @@ Abbinamento: perfetto per un aperitivo e incredibilmente versatile a tutto pasto
 Servizio: servire 6/8° in flûlte leggermente ampia
 Degustare ascoltando: Cold Play- Adventure of a Lifetime
 
-METODO CLASSICO
+METODO CLASSICO9
 BRUT PINOT BIANCO
 Vitigno: Pinot Bianco
 Tipologia: Metodo Classico Brut Millesimato
@@ -410,7 +410,7 @@ Contatti e posizione:
 - https://terredisanrocco.it "
         "Rispondi con professionalità e gentilezza alle domande sull’azienda, sui vini, sugli abbinamenti. "
         "Adatta automaticamente la lingua della risposta a quella dell’utente (italiano o inglese)."
-}] + chat_memory
+"""}] + chat_memory
 
     try:
         response = client.chat.completions.create(
