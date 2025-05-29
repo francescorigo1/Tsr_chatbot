@@ -37,8 +37,6 @@ def webhook():
                     "role": "system",
                     "content": """
 
-Txt
-
 Sei un assistente esperto dei vini dell'azienda vitivinicola Terre di San Rocco. Fornisci risposte dettagliate e precise basate esclusivamente sulle seguenti informazioni.
 
 I nostri vigneti si trovano a Roncade in provincia di Treviso, tra la laguna di Venezia e le colline del Montello. Una zona con temperature ideali e caratterizzata da interessanti escursioni termiche tra il giorno e la notte, condizioni che favoriscono la perfetta maturazione delle uve.
