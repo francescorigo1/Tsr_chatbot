@@ -1,17 +1,32 @@
-import os
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify
 from openai import OpenAI
-from flask_cors import CORS
+import os
 
 app = Flask(__name__)
-CORS(app)
-app.secret_key = "supersegreto"  # Cambialo se lo pubblichi
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# Prompt iniziale con supporto multilingua
-SYSTEM_PROMPT = {
-    "role": "system",
-    "content": (
+# Memoria semplice in RAM (dizionario utente -> lista messaggi)
+# Per esempio, se non hai utenti, puoi usare una singola lista globale
+chat_memory = []
+
+MAX_MESSAGES = 20
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    global chat_memory
+    req = request.get_json(force=True)
+    user_message = req['queryResult']['queryText']
+
+    # Aggiungi il messaggio utente alla memoria
+    chat_memory.append({"role": "user", "content": user_message})
+
+    # Se la memoria supera 20 messaggi, la resetto (o taglio)
+    if len(chat_memory) > MAX_MESSAGES:
+        chat_memory = chat_memory[-MAX_MESSAGES:]  # mantieni solo gli ultimi 20
+
+    # Prepara i messaggi con system prompt fisso + la memoria
+    messages = [
+        {"role": "system", "content": "
         "Sei un assistente esperto dei vini dell'azienda vitivinicola Terre di San Rocco.Fornisci risposte dettagliate e precise basate esclusivamente sulle seguenti informazioni.
 
 I nostri vigneti si trovano a Roncade in provincia di Treviso, tra la laguna di Venezia e le colline del Montello. Una zona con temperature ideali e caratterizzata da interessanti escursioni termiche tra il giorno e la notte, condizioni che favoriscono la perfetta maturazione delle uve.
@@ -395,55 +410,25 @@ Contatti e posizione:
 - https://terredisanrocco.it "
         "Rispondi con professionalità e gentilezza alle domande sull’azienda, sui vini, sugli abbinamenti. "
         "Adatta automaticamente la lingua della risposta a quella dell’utente (italiano o inglese)."
-    )
-}
-
-@app.route('/')
-def home():
-    return "Server è online!"
-
-@app.route('/testopenai')
-def test_openai():
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": "Say hello!"}]
-        )
-        return jsonify(response.choices[0].message.dict())
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    req = request.get_json(force=True)
-    user_message = req['queryResult']['queryText']
-
-    # Inizializza o aggiorna la sessione di memoria
-    if "messages" not in session:
-        session["messages"] = [SYSTEM_PROMPT]
-
-    session["messages"].append({"role": "user", "content": user_message})
-
-    # Mantiene solo gli ultimi 20 messaggi oltre al system prompt
-    if len(session["messages"]) > 21:
-        session["messages"] = [SYSTEM_PROMPT] + session["messages"][-20:]
+}] + chat_memory
 
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=session["messages"]
+            messages=messages
         )
         bot_response = response.choices[0].message.content
-        session["messages"].append({"role": "assistant", "content": bot_response})
+
+        # Aggiungi risposta del bot alla memoria
+        chat_memory.append({"role": "assistant", "content": bot_response})
 
         return jsonify({'fulfillmentText': bot_response})
+
     except Exception as e:
         return jsonify({'fulfillmentText': f"Errore: {str(e)}"})
 
-@app.route('/reset', methods=['POST'])
-def reset():
-    session.pop("messages", None)
-    return jsonify({'fulfillmentText': "Memoria della chat resettata."})
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
+
+        
