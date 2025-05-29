@@ -1,43 +1,18 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from openai import OpenAI
+from flask_cors import CORS
 
 app = Flask(__name__)
-
-# Inizializza client OpenAI con la chiave del progetto
+CORS(app)
+app.secret_key = "supersegreto"  # Cambialo se lo pubblichi
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-@app.route('/')
-def home():
-    return "Server è online!"
-
-@app.route('/testopenai')
-def test_openai():
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": "Say hello!"}
-            ]
-        )
-        return jsonify(response.choices[0].message.dict())
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    req = request.get_json(force=True)
-    user_message = req['queryResult']['queryText']
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """
-
-Sei un assistente esperto dei vini dell'azienda vitivinicola Terre di San Rocco. Fornisci risposte dettagliate e precise basate esclusivamente sulle seguenti informazioni.
+# Prompt iniziale con supporto multilingua
+SYSTEM_PROMPT = {
+    "role": "system",
+    "content": (
+        "Sei un assistente esperto dei vini dell'azienda vitivinicola Terre di San Rocco.Fornisci risposte dettagliate e precise basate esclusivamente sulle seguenti informazioni.
 
 I nostri vigneti si trovano a Roncade in provincia di Treviso, tra la laguna di Venezia e le colline del Montello. Una zona con temperature ideali e caratterizzata da interessanti escursioni termiche tra il giorno e la notte, condizioni che favoriscono la perfetta maturazione delle uve.
 In questa cornice, illuminata dal sole e accarezzata dalla brezza, in un territorio argilloso e vocato alla vigna alleviamo Pinot Grigio, Pinot Bianco, Chardonnay, Merlot e Cabernet Franc nei tre appezzamenti tutti adiacenti alla cantina. I filari sono collocati considerando il terroir e le migliori condizioni di esposizione, perché i nostri vini nascono in vigna con una cura maniacale che parte proprio dal campo nel rispetto della terra e della pianta. Crediamo fortemente che sia importante rispettare i ritmi della natura e raccogliere i frutti che essa ci offre, seguendo le tecniche agronomiche dell'agricoltura biologica. Questo ci permette di ottenere un prodotto veramente naturale che solo piccole produzioni possono garantire.
@@ -417,20 +392,58 @@ Degustare ascoltando: Maroon 5 - Sugar
 Contatti e posizione:
 -Situata nella provincia di Treviso, a Roncade, via Vivaldi 32/E.  
 - info@terredisanrocco.it, telefono +39 3891260990  
-- https://terredisanrocco.it
+- https://terredisanrocco.it "
+        "Rispondi con professionalità e gentilezza alle domande sull’azienda, sui vini, sugli abbinamenti. "
+        "Adatta automaticamente la lingua della risposta a quella dell’utente (italiano o inglese)."
+    )
+}
 
----
+@app.route('/')
+def home():
+    return "Server è online!"
 
-Rispondi sempre basandoti solo su queste informazioni, con risposte complete ma brevi e per altre domande indirizza a visitare il sito o contattare la cantina."""
-                },
-                {"role": "user", "content": user_message}
-            ]
+@app.route('/testopenai')
+def test_openai():
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "Say hello!"}]
+        )
+        return jsonify(response.choices[0].message.dict())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    req = request.get_json(force=True)
+    user_message = req['queryResult']['queryText']
+
+    # Inizializza o aggiorna la sessione di memoria
+    if "messages" not in session:
+        session["messages"] = [SYSTEM_PROMPT]
+
+    session["messages"].append({"role": "user", "content": user_message})
+
+    # Mantiene solo gli ultimi 20 messaggi oltre al system prompt
+    if len(session["messages"]) > 21:
+        session["messages"] = [SYSTEM_PROMPT] + session["messages"][-20:]
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=session["messages"]
         )
         bot_response = response.choices[0].message.content
-        return jsonify({'fulfillmentText': bot_response})
+        session["messages"].append({"role": "assistant", "content": bot_response})
 
+        return jsonify({'fulfillmentText': bot_response})
     except Exception as e:
         return jsonify({'fulfillmentText': f"Errore: {str(e)}"})
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    session.pop("messages", None)
+    return jsonify({'fulfillmentText': "Memoria della chat resettata."})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
